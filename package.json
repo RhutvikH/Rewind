@@ -9,39 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
-    "configuration": {
-      "title": "Rewind",
-      "properties": {
-        "rewind.intentMarkerColor": {
-          "type": "string",
-          "default": "rgba(255, 255, 0, 0.2)",
-          "description": "Background highlight color for intent markers."
-        },
-        "rewind.customIntentCategories": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "description": "List of custom intent categories."
-        }
-      }
-    },
     "commands": [
       {
-          "command": "rewind.addIntentMarker",
-          "title": "Rewind: Add Intent Marker"
-      },
-      {
-          "command": "rewind.removeIntentMarker",
-          "title": "Rewind: Remove Intent Marker"
-      },
-      {
-          "command": "rewind.removeCustomIntentCategory",
-          "title": "Rewind: Delete Custom Intent Category"
+        "command": "rewind.markAsPasted",
+        "title": "Rewind: Mark Selection as Pasted"
       }
     ]
   },
@@ -60,6 +36,7 @@
     "@types/vscode": "^1.107.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/fast-levenshtein": "^0.0.4",
     "typescript-eslint": "^8.52.0",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
@@ -68,5 +45,8 @@
     "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2"
+  },
+  "dependencies": {
+    "fast-levenshtein": "^3.0.0"
   }
 }
