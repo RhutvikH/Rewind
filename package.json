@@ -4,7 +4,7 @@
   "description": "Supercharge your code with easier documentation",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.108.1"
+    "vscode": "^1.107.0"
   },
   "categories": [
     "Other"
@@ -12,10 +12,36 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Rewind",
+      "properties": {
+        "rewind.intentMarkerColor": {
+          "type": "string",
+          "default": "rgba(255, 255, 0, 0.2)",
+          "description": "Background highlight color for intent markers."
+        },
+        "rewind.customIntentCategories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of custom intent categories."
+        }
+      }
+    },
     "commands": [
       {
-        "command": "rewind.helloWorld",
-        "title": "Hello World"
+          "command": "rewind.addIntentMarker",
+          "title": "Rewind: Add Intent Marker"
+      },
+      {
+          "command": "rewind.removeIntentMarker",
+          "title": "Rewind: Remove Intent Marker"
+      },
+      {
+          "command": "rewind.removeCustomIntentCategory",
+          "title": "Rewind: Delete Custom Intent Category"
       }
     ]
   },
@@ -31,7 +57,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.108.1",
+    "@types/vscode": "^1.107.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "typescript-eslint": "^8.52.0",
