@@ -1,33 +1,71 @@
-# Rewind: Intent Markers
+# rewind README
 
-Rewind is a lightweight, lightning-fast VS Code extension that allows developers to seamlessly drop **Intent Markers** onto any line of code in their workspace.
+This is the README for your extension "rewind". After writing up a brief description, we recommend including the following sections.
 
-Intent markers act as highly visible "badges" that clearly communicate *why* a piece of code exists or *what* needs to be done with it, making asynchronous code reviews, pair programming, and personal reminders incredibly easy.
+## Features
 
-## 🎯 Features
+Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
-- **Add Intent Markers Anywhere:** Place markers like `Refactoring`, `Bug Fix`, `Needs Review`, or `Complex Logic` on any line of code.
-- **Smart Grouping:** Stack multiple markers on the same line and they intelligently group into a single clean badge, keeping your editor tidy.
-- **Elegant Visuals:** Code lines get a soft, customizable background highlight with a floating badge at the end of the line, complete with markdown-enabled hover descriptions.
-- **Customizable Colors:** Don't like the default yellow highlight? Change it instantly! Specify any CSS background color (e.g., `rgba(0, 255, 0, 0.2)` or `#ff000044`) in your settings, and all active markers update live.
-- **Custom Categories:** Have a specific team workflow? Create your own custom labels on the fly directly from the Command Palette, and they'll be permanently saved as reusable options.
-- **Easy Cleanup:** Remove individual markers with smart selectors, or purge entire custom categories (which actively hunts down and deletes every matching marker in your workspace!).
+For example if there is an image subfolder under your extension project workspace:
 
-## 🚀 Quick Start
+\!\[feature X\]\(images/feature-x.png\)
 
-1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`).
-2. Search for **`Rewind: Add Intent Marker`**.
-3. Select an intent category from the list (or click `➕ Create Custom Intent...` to inject your own).
-4. Add an optional description to explain your thought process.
-5. Watch the marker natively appear on the active line!
+> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
-### Managing Markers
-- **`Rewind: Remove Intent Marker`**: Run this command on any highlighted line to delete the marker. If there are multiple markers stacked on that line, a stylish dropdown will let you choose exactly which one to delete!
-- **`Rewind: Delete Custom Intent Category`**: Want to clean up your custom labels? Run this command to delete a custom category. *(Note: Doing this will recursively sweep through your active files and cleanly erase any markers currently using that deleted category!)*
+## Requirements
 
-## ⚙️ Extension Settings
+If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
-You can customize the extension directly through your VS Code User settings:
+## Extension Settings
 
-* `rewind.intentMarkerColor`: Controls the background highlight color of the marked lines. (Default: `rgba(255, 255, 0, 0.2)`)
-* `rewind.customIntentCategories`: An array of strings containing your saved custom intent labels.
+Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+
+For example:
+
+This extension contributes the following settings:
+
+* `myExtension.enable`: Enable/disable this extension.
+* `myExtension.thing`: Set to `blah` to do something.
+
+## Known Issues
+
+Calling out known issues can help limit users opening duplicate issues against your extension.
+
+## Release Notes
+
+Users appreciate release notes as you update your extension.
+
+### 1.0.0
+
+Initial release of ...
+
+### 1.0.1
+
+Fixed issue #.
+
+### 1.1.0
+
+Added features X, Y, and Z.
+
+---
+
+## Following extension guidelines
+
+Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+
+* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+
+## Working with Markdown
+
+You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+
+* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
+* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
+* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+
+## For more information
+
+* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
+* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+
+**Enjoy!**
