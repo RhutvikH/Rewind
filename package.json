@@ -4,7 +4,7 @@
   "description": "Supercharge your code with easier documentation",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.108.1"
+    "vscode": "^1.107.0"
   },
   "categories": [
     "Other"
@@ -14,8 +14,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "rewind.helloWorld",
-        "title": "Hello World"
+        "command": "rewind.startGhostRewrite",
+        "title": "Rewind: Start Ghost Rewrite"
+      },
+      {
+        "command": "rewind.acceptGhostRewrite",
+        "title": "Rewind: Accept Ghost Rewrite"
+      },
+      {
+        "command": "rewind.discardGhostRewrite",
+        "title": "Rewind: Discard Ghost Rewrite"
       }
     ]
   },
@@ -31,7 +39,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.108.1",
+    "@types/vscode": "^1.107.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "typescript-eslint": "^8.52.0",

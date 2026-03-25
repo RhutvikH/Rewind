@@ -1,26 +1,52 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { startGhostRewrite, acceptGhostRewrite, discardGhostRewrite, guardGhostBranchEdits, syncGhostBlocksCache } from './ghostBranchManager';
+import { initGhostDecorations, updateGhostDecorations } from './decorations';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    console.log('Rewind: Timeline Forking active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "rewind" is now active!');
+    initGhostDecorations(context);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('rewind.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Rewind!');
-	});
+    context.subscriptions.push(
+        vscode.commands.registerCommand('rewind.startGhostRewrite', () => {
+            if (vscode.window.activeTextEditor) {
+                startGhostRewrite(vscode.window.activeTextEditor);
+            }
+        }),
+        vscode.commands.registerCommand('rewind.acceptGhostRewrite', () => {
+            if (vscode.window.activeTextEditor) {
+                acceptGhostRewrite(vscode.window.activeTextEditor);
+            }
+        }),
+        vscode.commands.registerCommand('rewind.discardGhostRewrite', () => {
+            if (vscode.window.activeTextEditor) {
+                discardGhostRewrite(vscode.window.activeTextEditor);
+            }
+        })
+    );
 
-	context.subscriptions.push(disposable);
+    vscode.workspace.onDidChangeTextDocument(e => {
+        if (guardGhostBranchEdits(e)) {
+            return;
+        }
+
+        if (vscode.window.activeTextEditor && e.document === vscode.window.activeTextEditor.document) {
+            updateGhostDecorations(vscode.window.activeTextEditor);
+            syncGhostBlocksCache(e.document);
+        }
+    });
+
+    vscode.window.onDidChangeActiveTextEditor(editor => {
+        if (editor) {
+            updateGhostDecorations(editor);
+            syncGhostBlocksCache(editor.document);
+        }
+    });
+
+    if (vscode.window.activeTextEditor) {
+        updateGhostDecorations(vscode.window.activeTextEditor);
+        syncGhostBlocksCache(vscode.window.activeTextEditor.document);
+    }
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
