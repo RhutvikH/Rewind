@@ -4,13 +4,7 @@ This is the README for your extension "rewind". After writing up a brief descrip
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Paste Geneology and Drift Analysis
 
 ## Requirements
 
@@ -35,37 +29,36 @@ Calling out known issues can help limit users opening duplicate issues against y
 
 Users appreciate release notes as you update your extension.
 
-### 1.0.0
+## Documentation
+## Paste Geneology and Drift Analysis
 
-Initial release of ...
+Paste Genealogy is a core feature of the Rewind extension that helps users track the provenance and evolution of code snippets pasted from external sources.
 
-### 1.0.1
+### Core Features
 
-Fixed issue #.
+1. **Automatic Paste Detection**
+   - The extension automatically intercepts code pasted into the editor (for snippets of 10 characters or more).
+   - Upon detecting a paste, the user is prompted to optionally provide a source for the snippet (e.g., "StackOverflow", "GitHub", "Internal Wiki").
 
-### 1.1.0
+2. **Drift Calculation**
+   - As the pasted code is modified, the extension tracks its evolution.
+   - It calculates a "Drift" percentage using the Levenshtein distance between the original pasted snippet and the current state of the block.
+   - If the text block is expanded or shifted by new lines, the extension automatically adjusts its tracking coordinates.
 
-Added features X, Y, and Z.
+3. **Visual Indicators and Hovers**
+   - Tracked pasted snippets are highlighted with a distinct background decoration.
+   - Hovering over a highlighted snippet displays:
+     - The **Source** of the snippet.
+     - The **Drift** (modification percentage).
+     - The **Original text** that was pasted.
 
----
+4. **Manual Tracking**
+   - Users can manually highlight an existing block of code and run the command `Rewind: Mark Selection as Pasted` (`rewind.markAsPasted`).
+   - This allows bringing existing code under genealogy tracking and manually assigning a source.
 
-## Following extension guidelines
+### Technical Implementation
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- **Activation**: Triggers eagerly `onStartupFinished` to ensure all changes are tracked.
+- **Tracking Core**: Handled by `PasteManager`, which listens to `vscode.workspace.onDidChangeTextDocument` events, adjusting coordinates mathematically on content changes.
+- **Drift Logic**: Powered by the `fast-levenshtein` library to calculate efficient string distances continuously.
+- **UI Overlay**: Powered by the `decorations.ts` module which applies `vscode.TextEditorDecorationType` to the active editor dynamically.
