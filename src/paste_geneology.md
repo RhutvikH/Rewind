@@ -1,40 +1,8 @@
-# Rewind README
-
-This is the README for your extension "rewind". After writing up a brief description, we recommend including the following sections.
-
-## Features
-
-- Paste Geneology and Drift Analysis
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-## Documentation
-## Paste Geneology and Drift Analysis
+# Paste Genealogy
 
 Paste Genealogy is a core feature of the Rewind extension that helps users track the provenance and evolution of code snippets pasted from external sources.
 
-### Core Features
+## Core Features
 
 1. **Automatic Paste Detection**
    - The extension automatically intercepts code pasted into the editor (for snippets of 10 characters or more).
@@ -56,9 +24,8 @@ Paste Genealogy is a core feature of the Rewind extension that helps users track
    - Users can manually highlight an existing block of code and run the command `Rewind: Mark Selection as Pasted` (`rewind.markAsPasted`).
    - This allows bringing existing code under genealogy tracking and manually assigning a source.
 
-### Technical Implementation
+## Technical Implementation
 
-**Enjoy!**
 - **Activation**: Triggers eagerly `onStartupFinished` to ensure all changes are tracked.
 - **Tracking Core**: Handled by `PasteManager`, which listens to `vscode.workspace.onDidChangeTextDocument` events, adjusting coordinates mathematically on content changes.
 - **Drift Logic**: Powered by the `fast-levenshtein` library to calculate efficient string distances continuously.
