@@ -1,4 +1,4 @@
-# rewind README
+# Rewind README
 
 This is the README for your extension "rewind". After writing up a brief description, we recommend including the following sections.
 
@@ -58,6 +58,7 @@ Paste Genealogy is a core feature of the Rewind extension that helps users track
 
 ### Technical Implementation
 
+**Enjoy!**
 - **Activation**: Triggers eagerly `onStartupFinished` to ensure all changes are tracked.
 - **Tracking Core**: Handled by `PasteManager`, which listens to `vscode.workspace.onDidChangeTextDocument` events, adjusting coordinates mathematically on content changes.
 - **Drift Logic**: Powered by the `fast-levenshtein` library to calculate efficient string distances continuously.
