@@ -34,6 +34,16 @@
     },
     "commands": [
       {
+        "command": "rewind.startGhostRewrite",
+        "title": "Rewind: Start Ghost Rewrite"
+      },
+      {
+        "command": "rewind.acceptGhostRewrite",
+        "title": "Rewind: Accept Ghost Rewrite"
+      },
+      {
+        "command": "rewind.discardGhostRewrite",
+        "title": "Rewind: Discard Ghost Rewrite"
         "command": "rewind.addIntentMarker",
         "title": "Rewind: Add Intent Marker"
       },
@@ -61,6 +71,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/vscode": "^1.107.0",
     "@types/fast-levenshtein": "^0.0.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
