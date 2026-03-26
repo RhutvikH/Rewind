@@ -1,26 +1,77 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import { CognitiveLoadManager } from "./cognitiveLoadManager";
+import {
+  initHeatmapDecorations,
+  updateHeatmapDecorations,
+} from "./decorations";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+let cognitiveLoadManager: CognitiveLoadManager;
+let isHeatmapActive = false;
+
 export function activate(context: vscode.ExtensionContext) {
+  console.log("Rewind: Cognitive Load Tracker activated.");
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "rewind" is now active!');
+  initHeatmapDecorations();
+  cognitiveLoadManager = new CognitiveLoadManager();
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('rewind.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Rewind!');
-	});
+  const docChangeDisposable = vscode.workspace.onDidChangeTextDocument((e) => {
+    cognitiveLoadManager.onDocumentChange(e);
+    if (isHeatmapActive) {
+      const editor = vscode.window.activeTextEditor;
+      if (editor && editor.document === e.document) {
+        updateHeatmapDecorations(editor, cognitiveLoadManager);
+      }
+    }
+  });
 
-	context.subscriptions.push(disposable);
+  const selectionChangeDisposable =
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+      cognitiveLoadManager.onSelectionChange(e);
+    });
+
+  // Manager will call this whenever dwell time updates significantly
+  cognitiveLoadManager.setRepaintCallback(() => {
+    if (isHeatmapActive) {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) updateHeatmapDecorations(editor, cognitiveLoadManager);
+    }
+  });
+
+  const toggleDisposable = vscode.commands.registerCommand(
+    "rewind.toggleHeatmap",
+    () => {
+      isHeatmapActive = !isHeatmapActive;
+      const editor = vscode.window.activeTextEditor;
+
+      if (isHeatmapActive) {
+        vscode.window.showInformationMessage("Cognitive Load Heatmap Enabled");
+        if (editor) updateHeatmapDecorations(editor, cognitiveLoadManager);
+      } else {
+        vscode.window.showInformationMessage("Cognitive Load Heatmap Disabled");
+        if (editor) updateHeatmapDecorations(editor, null); // passing null clears decorations
+      }
+    },
+  );
+
+  const editorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(
+    (editor) => {
+      if (editor && isHeatmapActive) {
+        updateHeatmapDecorations(editor, cognitiveLoadManager);
+      }
+    },
+  );
+
+  context.subscriptions.push(
+    docChangeDisposable,
+    selectionChangeDisposable,
+    toggleDisposable,
+    editorChangeDisposable,
+  );
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  if (cognitiveLoadManager) {
+    cognitiveLoadManager.dispose();
+  }
+}
