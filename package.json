@@ -9,13 +9,23 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "rewind.helloWorld",
-        "title": "Hello World"
+        "command": "rewind.analyzeImpact",
+        "title": "Rewind: Analyze Change Impact on Active File"
+      },
+      {
+        "command": "rewind.showImpactResults",
+        "title": "Rewind: Show Impact Analysis Results"
+      },
+      {
+        "command": "rewind.clearImpactAlerts",
+        "title": "Rewind: Clear All Impact Alerts"
       }
     ]
   },

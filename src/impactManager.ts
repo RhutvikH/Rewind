@@ -5,79 +5,205 @@ import { ImpactAlert } from './types';
 // Map of URI string -> Array of alerts for that file
 export const activeAlerts = new Map<string, ImpactAlert[]>();
 
-export async function analyzeImpact(document: vscode.TextDocument) {
-    // Clear previous impact alerts on new saves
-    activeAlerts.clear();
+/** Stable summary from the last completed analysis run */
+export interface AnalysisSummary {
+    sourceRelPath: string;
+    affectedCount: number;
+    fileCount: number;
+    ranAt: Date;
+}
 
-    const symbolsToSearch: vscode.Position[] = [];
-    // Matches the core exported blocks inside TS/JS files
-    const exportRegex = /export\s+(?:async\s+)?(?:function|class|interface|type|const|let|var)\s+([a-zA-Z0-9_$]+)/g;
+let _lastSummary: AnalysisSummary | null = null;
+
+export function getLastAnalysisSummary(): AnalysisSummary | null {
+    return _lastSummary;
+}
+
+export type AnalysisCompleteListener = (summary: AnalysisSummary | null) => void;
+const _listeners = new Set<AnalysisCompleteListener>();
+
+export function onAnalysisComplete(listener: AnalysisCompleteListener): vscode.Disposable {
+    _listeners.add(listener);
+    return { dispose: () => _listeners.delete(listener) };
+}
+
+function fireListeners(summary: AnalysisSummary | null): void {
+    for (const fn of _listeners) { fn(summary); }
+}
+
+export function clearAllAlerts(): void {
+    activeAlerts.clear();
+    _lastSummary = null;
+    for (const editor of vscode.window.visibleTextEditors) {
+        updateImpactDecorations(editor);
+    }
+    fireListeners(null); // notify status bar & panel
+}
+
+function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ─── Export symbol extraction ─────────────────────────────────────────────────
+
+interface SymbolRef { pos: vscode.Position; name: string; }
+
+function extractExportedSymbols(document: vscode.TextDocument): SymbolRef[] {
+    const results: SymbolRef[] = [];
+    const seen = new Set<string>();
+
+    // Pattern 1: named keyword exports
+    // e.g. export [declare] [abstract] [async] function|class|interface|type|enum|const|let|var Name
+    const namedRe = /export\s+(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:function\*?\s+|class\s+|interface\s+|type\s+|enum\s+|const\s+|let\s+|var\s+)([A-Za-z_$][A-Za-z0-9_$]*)/g;
+
+    // Pattern 2: export default function/class with a name
+    // e.g. export default function myFn() | export default class MyClass
+    const defaultRe = /export\s+default\s+(?:async\s+)?(?:function\*?\s+|class\s+)([A-Za-z_$][A-Za-z0-9_$]*)/g;
+
+    // Pattern 3: export { a, b as c, type d }
+    // We extract local names (before 'as') to find their definition positions
+    const listRe = /export\s+(?:type\s+)?\{([^}]+)\}/g;
 
     for (let i = 0; i < document.lineCount; i++) {
-        const lineText = document.lineAt(i).text;
-        let match;
-        while ((match = exportRegex.exec(lineText)) !== null) {
-            // Find the precise column start of the actual variable name
-            const symbolIndex = match.index + match[0].lastIndexOf(match[1]);
-            symbolsToSearch.push(new vscode.Position(i, symbolIndex));
+        const line = document.lineAt(i).text;
+
+        namedRe.lastIndex = 0;
+        let m: RegExpExecArray | null;
+        while ((m = namedRe.exec(line)) !== null) {
+            const name = m[1];
+            const col = m.index + m[0].lastIndexOf(name);
+            const key = `${i}:${col}:${name}`;
+            if (!seen.has(key)) { seen.add(key); results.push({ pos: new vscode.Position(i, col), name }); }
+        }
+
+        defaultRe.lastIndex = 0;
+        while ((m = defaultRe.exec(line)) !== null) {
+            const name = m[1];
+            const col = m.index + m[0].lastIndexOf(name);
+            const key = `${i}:${col}:${name}`;
+            if (!seen.has(key)) { seen.add(key); results.push({ pos: new vscode.Position(i, col), name }); }
+        }
+
+        listRe.lastIndex = 0;
+        while ((m = listRe.exec(line)) !== null) {
+            // Skip re-exports from other modules: export { foo } from './bar'
+            const afterBrace = line.slice(line.indexOf('}', m.index) + 1).trim();
+            if (/^from\s/.test(afterBrace)) { continue; }
+
+            const entries = m[1].split(',');
+            for (const entry of entries) {
+                // "localName as exportedName" or just "name" or "type Name"
+                const cleaned = entry.trim().replace(/^type\s+/, '');
+                const parts = cleaned.split(/\s+as\s+/);
+                const localName = parts[0].trim();
+                if (!localName || /^['"]/.test(localName)) { continue; }
+                const idx = line.indexOf(localName, m.index);
+                if (idx === -1) { continue; }
+                const key = `${i}:${idx}:${localName}`;
+                if (!seen.has(key)) { seen.add(key); results.push({ pos: new vscode.Position(i, idx), name: localName }); }
+            }
         }
     }
 
-    if (symbolsToSearch.length === 0) return;
+    return results;
+}
+
+// ─── Main analysis function ───────────────────────────────────────────────────
+
+export async function analyzeImpact(document: vscode.TextDocument): Promise<void> {
+    const originUriStr = document.uri.toString();
+    const relPath = vscode.workspace.asRelativePath(document.uri);
+
+    // Clear stale alerts for this source file and any downstream alerts it caused
+    activeAlerts.delete(originUriStr);
+    for (const [key, alerts] of activeAlerts.entries()) {
+        const filtered = alerts.filter(a => a.sourceUri !== originUriStr);
+        if (filtered.length === 0) { activeAlerts.delete(key); }
+        else { activeAlerts.set(key, filtered); }
+    }
+
+    // Wait for the language server to settle after the save
+    await delay(700);
+
+    // Extract exported symbols using multiple patterns
+    const symbols = extractExportedSymbols(document);
+
+    if (symbols.length === 0) {
+        for (const editor of vscode.window.visibleTextEditors) { updateImpactDecorations(editor); }
+        _lastSummary = null;
+        fireListeners(null);
+        return;
+    }
 
     let affectedCount = 0;
-    const originalUriStr = document.uri.toString();
 
-    for (const pos of symbolsToSearch) {
-        try {
-            // Ping the native VS Code TypeScript Language Server to hunt for all dependencies instantly
-            const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-                'vscode.executeReferenceProvider',
-                document.uri,
-                pos
-            );
+    await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Window, title: 'Rewind: Analyzing change impact...' },
+        async (progress) => {
+            for (let idx = 0; idx < symbols.length; idx++) {
+                const { pos, name } = symbols[idx];
+                progress.report({
+                    message: `Checking '${name}' (${idx + 1}/${symbols.length})...`,
+                    increment: 100 / symbols.length
+                });
 
-            if (locations) {
-                for (const loc of locations) {
-                    const locUriStr = loc.uri.toString();
-                    
-                    // Highlight non-local dependencies ONLY (files other than the one just saved)
-                    if (locUriStr !== originalUriStr) {
-                        if (!activeAlerts.has(locUriStr)) {
-                            activeAlerts.set(locUriStr, []);
-                        }
-                        
+                try {
+                    const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+                        'vscode.executeReferenceProvider',
+                        document.uri,
+                        pos
+                    );
+                    if (!locations || locations.length === 0) { continue; }
+
+                    for (const loc of locations) {
+                        const locUriStr = loc.uri.toString();
+                        if (locUriStr === originUriStr) { continue; } // skip self-references
+
+                        if (!activeAlerts.has(locUriStr)) { activeAlerts.set(locUriStr, []); }
                         const existing = activeAlerts.get(locUriStr)!;
-                        // Avoid duplicate UI decorations if multiple exports trigger the exact same referenced block
+
+                        // Deduplicate by range
                         const isDup = existing.some(a => a.range.isEqual(loc.range));
                         if (!isDup) {
                             existing.push({
                                 uri: loc.uri,
                                 range: loc.range,
-                                message: `May be indirectly affected by recent changes in \`${vscode.workspace.asRelativePath(document.uri)}\``
+                                sourceUri: originUriStr,
+                                symbolName: name,
+                                message: `References '${name}' from '${relPath}', which was just modified. Verify it still works as expected.`
                             });
                             affectedCount++;
                         }
                     }
+                } catch (e) {
+                    console.error(`Rewind: reference lookup failed for '${name}'`, e);
                 }
             }
-        } catch (e) {
-            console.error('Impact analysis error:', e);
         }
-    }
+    );
+
+    // Repaint all visible editors
+    for (const editor of vscode.window.visibleTextEditors) { updateImpactDecorations(editor); }
+
+    const affectedFileCount = [...activeAlerts.keys()].filter(k => k !== originUriStr).length;
+
+    _lastSummary = affectedCount > 0 ? {
+        sourceRelPath: relPath,
+        affectedCount,
+        fileCount: affectedFileCount,
+        ranAt: new Date()
+    } : null;
+
+    fireListeners(_lastSummary);
 
     if (affectedCount > 0) {
-        const fileWord = affectedCount === 1 ? 'location' : 'locations';
-        vscode.window.showInformationMessage(`Rewind: Change Impact Alert! ${affectedCount} ${fileWord} outside this file may be structurally affected by your recent save.`);
-        
-        // Immediately repaint any visible editors if they happen to be the impacted files
-        for (const editor of vscode.window.visibleTextEditors) {
-            updateImpactDecorations(editor);
-        }
-    } else {
-        // Clear old decorations in an edge-case where the user deletes their connections
-        for (const editor of vscode.window.visibleTextEditors) {
-            updateImpactDecorations(editor);
+        const locWord = affectedCount === 1 ? 'location' : 'locations';
+        const fileWord = affectedFileCount === 1 ? 'file' : 'files';
+        const msg = `Rewind: ${affectedCount} ${locWord} across ${affectedFileCount} ${fileWord} may be affected by changes to '${relPath}'.`;
+
+        const choice = await vscode.window.showWarningMessage(msg, 'Show Results', 'Dismiss');
+        if (choice === 'Show Results') {
+            vscode.commands.executeCommand('rewind.showImpactResults');
         }
     }
 }
