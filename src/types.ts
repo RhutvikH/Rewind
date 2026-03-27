@@ -6,9 +6,12 @@ export interface ImpactAlert {
     sourceUri: string;    // URI string of the file whose save triggered this alert
     symbolName: string;   // Exported symbol name that changed (e.g. "myFunction")
     message: string;
+}
+
 export const MARKER_ORIG_START = '// [Rewind: Original Start]';
 export const MARKER_GHOST_START = '// [Rewind: Ghost Branch]';
 export const MARKER_GHOST_END = '// [Rewind: End Ghost Branch]';
+
 export interface LineMetrics {
     deletions: number;
     editCount: number;
@@ -23,10 +26,12 @@ export interface RewindEvent {
 export interface PasteEvent extends RewindEvent {
     type: 'paste_event';
     timestamp: number;
-// The fundamental unit of time in Rewind
+}
+
+    // The fundamental unit of time in Rewind
 export interface RewindEvent {
     timestamp: number; // Unix timestamp
-    type: 'intent_marker'; 
+    type: string; 
 }
 
 // 1. Intent Markers
@@ -36,6 +41,8 @@ export interface IntentMarkerEvent extends RewindEvent {
     line: number; // 0-indexed line number
     intentLabel: string; // e.g., "Refactoring", "Complex Logic"
     description?: string;
+}
+
 // Base event type
 export interface RewindEvent {
     timestamp: number;
@@ -52,5 +59,4 @@ export interface PasteEvent extends RewindEvent {
     currentText: string;
     source: string;
     drift: number;
-    drift: number; // 0.0 – 1.0, where 0 = no change and 1 = completely different
 }

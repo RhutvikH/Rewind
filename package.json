@@ -44,6 +44,8 @@
       {
         "command": "rewind.clearImpactAlerts",
         "title": "Rewind: Clear All Impact Alerts"
+      },
+      {
         "command": "rewind.startGhostRewrite",
         "title": "Rewind: Start Ghost Rewrite"
       },
@@ -54,6 +56,8 @@
       {
         "command": "rewind.discardGhostRewrite",
         "title": "Rewind: Discard Ghost Rewrite"
+      },
+      {
         "command": "rewind.addIntentMarker",
         "title": "Rewind: Add Intent Marker"
       },
@@ -64,6 +68,8 @@
       {
         "command": "rewind.removeCustomIntentCategory",
         "title": "Rewind: Delete Custom Intent Category"
+      },
+      {
         "command": "rewind.markAsPasted",
         "title": "Rewind: Mark Selection as Pasted"
       }
@@ -81,7 +87,6 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.107.0",
     "@types/fast-levenshtein": "^0.0.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
