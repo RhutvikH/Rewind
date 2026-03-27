@@ -14,6 +14,24 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Rewind",
+      "properties": {
+        "rewind.intentMarkerColor": {
+          "type": "string",
+          "default": "rgba(255, 255, 0, 0.2)",
+          "description": "Background highlight color for intent markers."
+        },
+        "rewind.customIntentCategories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of custom intent categories."
+        }
+      }
+    },
     "commands": [
       {
         "command": "rewind.analyzeImpact",
@@ -26,6 +44,28 @@
       {
         "command": "rewind.clearImpactAlerts",
         "title": "Rewind: Clear All Impact Alerts"
+        "command": "rewind.startGhostRewrite",
+        "title": "Rewind: Start Ghost Rewrite"
+      },
+      {
+        "command": "rewind.acceptGhostRewrite",
+        "title": "Rewind: Accept Ghost Rewrite"
+      },
+      {
+        "command": "rewind.discardGhostRewrite",
+        "title": "Rewind: Discard Ghost Rewrite"
+        "command": "rewind.addIntentMarker",
+        "title": "Rewind: Add Intent Marker"
+      },
+      {
+        "command": "rewind.removeIntentMarker",
+        "title": "Rewind: Remove Intent Marker"
+      },
+      {
+        "command": "rewind.removeCustomIntentCategory",
+        "title": "Rewind: Delete Custom Intent Category"
+        "command": "rewind.markAsPasted",
+        "title": "Rewind: Mark Selection as Pasted"
       }
     ]
   },
@@ -42,15 +82,20 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.107.0",
+    "@types/fast-levenshtein": "^0.0.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "typescript-eslint": "^8.52.0",
-    "eslint": "^9.39.2",
-    "typescript": "^5.9.3",
-    "ts-loader": "^9.5.4",
-    "webpack": "^5.104.1",
-    "webpack-cli": "^6.0.1",
+    "@types/vscode": "^1.107.0",
     "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.2",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "fast-levenshtein": "^3.0.0"
   }
 }
