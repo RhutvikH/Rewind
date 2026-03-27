@@ -31,8 +31,8 @@ export class IntentManager {
         if (this.markers.has(file)) {
             const fileMarkers = this.markers.get(file)!;
             this.markers.set(file, fileMarkers.filter(m => {
-                if (m.line !== line) return true; // Keep markers on other lines
-                if (timestamp !== undefined && m.timestamp !== timestamp) return true; // Keep markers on the same line but different timestamp
+                if (m.line !== line) {return true;} // Keep markers on other lines
+                if (timestamp !== undefined && m.timestamp !== timestamp) {return true;} // Keep markers on the same line but different timestamp
                 return false; // Remove!
             }));
         }

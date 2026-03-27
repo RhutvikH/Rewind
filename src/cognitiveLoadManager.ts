@@ -83,8 +83,8 @@ export class CognitiveLoadManager {
       }
 
       // Record edit activity if within bounds
-      if (startLine >= metrics.length) continue;
-      if (!metrics[startLine]) metrics[startLine] = this.createEmptyMetrics();
+      if (startLine >= metrics.length) {continue;}
+      if (!metrics[startLine]) {metrics[startLine] = this.createEmptyMetrics();}
 
       if (change.rangeLength > 0) {
         // If text was removed, it's a deletion
@@ -102,7 +102,7 @@ export class CognitiveLoadManager {
   }
 
   public onSelectionChange(event: vscode.TextEditorSelectionChangeEvent) {
-    if (event.selections.length === 0) return;
+    if (event.selections.length === 0) {return;}
 
     const editor = event.textEditor;
     const line = event.selections[0].active.line;
@@ -121,7 +121,7 @@ export class CognitiveLoadManager {
     line: number,
     documentLineCount: number,
   ) {
-    if (this.dwellTimer) clearInterval(this.dwellTimer);
+    if (this.dwellTimer) {clearInterval(this.dwellTimer);}
 
     this.currentCursorFile = file;
     this.currentCursorLine = line;
@@ -155,6 +155,6 @@ export class CognitiveLoadManager {
   }
 
   public dispose() {
-    if (this.dwellTimer) clearInterval(this.dwellTimer);
+    if (this.dwellTimer) {clearInterval(this.dwellTimer);}
   }
 }

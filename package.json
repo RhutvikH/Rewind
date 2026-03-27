@@ -72,6 +72,10 @@
       {
         "command": "rewind.markAsPasted",
         "title": "Rewind: Mark Selection as Pasted"
+      },
+      {
+        "command": "rewind.toggleHeatmap",
+        "title": "Rewind: Toggle Cognitive Load Heatmap"
       }
     ]
   },

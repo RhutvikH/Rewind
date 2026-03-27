@@ -34,7 +34,7 @@ export class PasteManager {
     public onDocumentChange(event: vscode.TextDocumentChangeEvent) {
         const file = event.document.fileName;
         const blocks = this.pastedBlocks.get(file);
-        if (!blocks || blocks.length === 0) return;
+        if (!blocks || blocks.length === 0) {return;}
 
         // Process changes uniformly for coordinates first
         for (const change of event.contentChanges) {

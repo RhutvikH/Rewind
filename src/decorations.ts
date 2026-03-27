@@ -85,7 +85,7 @@ export function initGhostDecorations(context: vscode.ExtensionContext) {
 }
 
 export function updateGhostDecorations(editor: vscode.TextEditor) {
-    if (!editor) return;
+    if (!editor) {return;}
     
     const blocks = getGhostBlocks(editor.document);
     
@@ -141,7 +141,7 @@ export function initHeatmapDecorations() {
 }
 
 export function updateHeatmapDecorations(editor: vscode.TextEditor, manager: CognitiveLoadManager | null) {
-    if (!editor) return;
+    if (!editor) {return;}
     
     if (!manager) {
         gradientDecorations.forEach((dec) => editor.setDecorations(dec, []));
@@ -174,10 +174,10 @@ for (let i = 0; i < metricsArr.length; i++) {
     const smoothedScore = smoothedScores[i];
     
     // Skip unedited or zero-tension lines
-    if (!metrics || smoothedScore < 0.5) continue;
+    if (!metrics || smoothedScore < 0.5) {continue;}
     
     // Verify if line still exists in current text bounds
-    if (i >= editor.document.lineCount) break;
+    if (i >= editor.document.lineCount) {break;}
     
     const maxChar = editor.document.lineAt(i).text.length;
     const range = new vscode.Range(i, 0, i, maxChar);
@@ -241,7 +241,7 @@ export function updateDecorations(editor: vscode.TextEditor, intentManager: Inte
     // Group markers by line to prevent stacking overlapping decorations
     const markersByLine = new Map<number, typeof markers>();
     for (const marker of markers) {
-        if (!markersByLine.has(marker.line)) markersByLine.set(marker.line, []);
+        if (!markersByLine.has(marker.line)) {markersByLine.set(marker.line, []);}
         markersByLine.get(marker.line)!.push(marker);
     }
     
@@ -278,7 +278,7 @@ export function updateDecorations(editor: vscode.TextEditor, intentManager: Inte
 
 
 export function clearDecorations(editor: vscode.TextEditor) {
-    if (!editor || !intentDecorationType) return;
+    if (!editor || !intentDecorationType) {return;}
     editor.setDecorations(intentDecorationType, []);
 }
 
@@ -287,7 +287,7 @@ export function clearDecorations(editor: vscode.TextEditor) {
 // Must be called from activate() after VS Code extension host is ready
 // Paste geneology
 export function initPasteDecorations() {
-    if (pasteDecorationType) pasteDecorationType.dispose();
+    if (pasteDecorationType) {pasteDecorationType.dispose();}
     pasteDecorationType = vscode.window.createTextEditorDecorationType({
         backgroundColor: 'rgba(0, 255, 0, 0.1)',
         isWholeLine: false,
@@ -298,7 +298,7 @@ export function initPasteDecorations() {
 
 
 export function updatePasteDecorations(editor: vscode.TextEditor, pasteManager: PasteManager) {
-    if (!editor || !pasteDecorationType) return;
+    if (!editor || !pasteDecorationType) {return;}
     
     const file = editor.document.fileName;
     const pastedEvents = pasteManager.getPasteEvents(file);
@@ -307,7 +307,7 @@ export function updatePasteDecorations(editor: vscode.TextEditor, pasteManager: 
     for (const paste of pastedEvents) {
         const startLine = Math.max(0, paste.startLine);
         const maxEndLine = Math.min(Math.max(0, paste.endLine), editor.document.lineCount - 1);
-        if (maxEndLine < startLine) continue;
+        if (maxEndLine < startLine) {continue;}
         
         const range = new vscode.Range(
             new vscode.Position(startLine, 0),

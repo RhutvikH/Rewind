@@ -127,10 +127,10 @@ export function discardGhostRewrite(editor: vscode.TextEditor) {
 }
 
 export function guardGhostBranchEdits(e: vscode.TextDocumentChangeEvent): boolean {
-    if (isExtensionAction) return false;
+    if (isExtensionAction) {return false;}
 
     const oldBlocks = blockCache.get(e.document.uri.toString()) || [];
-    if (oldBlocks.length === 0) return false;
+    if (oldBlocks.length === 0) {return false;}
 
     let shouldUndo = false;
     for (const change of e.contentChanges) {
@@ -147,7 +147,7 @@ export function guardGhostBranchEdits(e: vscode.TextDocumentChangeEvent): boolea
                 shouldUndo = true; break;
             }
         }
-        if (shouldUndo) break;
+        if (shouldUndo) {break;}
     }
 
     if (shouldUndo) {
