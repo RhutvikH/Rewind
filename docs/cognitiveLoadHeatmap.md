@@ -13,10 +13,15 @@ By tracking typing behaviors—specifically deletions and true pauses—the syst
 To toggle the heatmap on or off, run the following command from the VS Code Command Palette:
 **`Rewind: Toggle Cognitive Load Heatmap`** (`rewind.toggleHeatmap`)
 
-When activated, the heatmap dynamically analyzes the current file's line metrics and overlays the smooth gradient colors. Hovering over any highlighted line will display a tooltip revealing the exact breakdown:
-- Edits completely linearly
-- Deletions / Backspaces
-- Dwell time (Pauses)
+When activated:
+1. A **notification** confirms "Cognitive Load Heatmap Enabled".
+2. The system dynamically analyzes the current file's line metrics.
+3. A **smooth color gradient** is overlaid on the editor lines.
+
+Hovering over any highlighted line will display a breakdown of the cognitive load:
+- **Linear Typing**: Base edits.
+- **Deletions / Backspaces**: High friction edits.
+- **Dwell time (Pauses)**: Significant pauses in typing.
 
 ---
 

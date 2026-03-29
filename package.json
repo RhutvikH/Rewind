@@ -13,6 +13,11 @@
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
+  "files": [
+    "dist",
+    "media",
+    "node_modules"
+  ],
   "contributes": {
     "configuration": {
       "title": "Rewind",
@@ -76,6 +81,22 @@
       {
         "command": "rewind.toggleHeatmap",
         "title": "Rewind: Toggle Cognitive Load Heatmap"
+      },
+      {
+        "command": "rewind.showGraph",
+        "title": "Rewind: Show Code Graph"
+      },
+      {
+        "command": "rewind.startRecording",
+        "title": "Rewind: Start Thought Recording"
+      },
+      {
+        "command": "rewind.stopRecording",
+        "title": "Rewind: Stop Thought Recording"
+      },
+      {
+        "command": "rewind.playForLine",
+        "title": "Rewind: Play Explanation For This Line"
       }
     ]
   },
@@ -93,7 +114,7 @@
   "devDependencies": {
     "@types/fast-levenshtein": "^0.0.4",
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
+    "@types/node": "^22.19.13",
     "@types/vscode": "^1.107.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
@@ -105,6 +126,8 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "fast-levenshtein": "^3.0.0"
+    "fast-levenshtein": "^3.0.0",
+    "mic": "^2.1.2",
+    "node-record-lpcm16": "^1.0.1"
   }
 }

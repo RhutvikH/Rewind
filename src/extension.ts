@@ -36,10 +36,14 @@ import { CognitiveLoadManager } from "./cognitiveLoadManager";
 import { IntentManager } from './intentManager';
 import { PasteManager } from './pasteManager';
 
+// --- Audio Sync Imports ---
+import { Recorder, scanFiles, buildGraph, getWebviewContent } from './recorder';
+
 // --- State Managers ---
 let pasteManager: PasteManager;
 let intentManager: IntentManager;
 let cognitiveLoadManager: CognitiveLoadManager;
+let recorder: Recorder; // Added Audio Sync Manager
 let isHeatmapActive = false;
 
 /**
@@ -52,6 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
     pasteManager = new PasteManager();
     intentManager = new IntentManager();
     cognitiveLoadManager = new CognitiveLoadManager();
+    recorder = new Recorder(context); // Initialize Audio Recorder
 
     initImpactDecorations();
     initGhostDecorations(context);
@@ -67,6 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerCognitiveLoad(context);
     registerIntentMarkers(context);
     registerPasteGenealogy(context);
+    registerAudioSync(context); // Register Audio Sync Commands
 
     // 3. Global Event Handlers (Consolidated)
     registerGlobalListeners(context);
@@ -79,12 +85,14 @@ export function activate(context: vscode.ExtensionContext) {
         syncGhostBlocksCache(editor.document);
         updatePasteDecorations(editor, pasteManager);
         updateIntentDecorations(editor, intentManager);
+        recorder.highlightRecordedLines(); // Trigger Audio Sync Highlights
         if (isHeatmapActive) {
             updateHeatmapDecorations(editor, cognitiveLoadManager);
         }
     }
 
     console.log('Rewind: Extension fully activated.');
+    vscode.window.showInformationMessage('Rewind extension activated!');
 }
 
 /**
@@ -426,6 +434,51 @@ function registerPasteGenealogy(context: vscode.ExtensionContext) {
     );
 }
 
+function registerAudioSync(context: vscode.ExtensionContext) {
+    context.subscriptions.push(
+        // UPDATED: Now properly accepts the targetLine argument from the hover widget link
+        vscode.commands.registerCommand('rewind.playForLine', (targetLine?: number) => {
+            recorder.playForLine(targetLine);
+        }),
+
+        vscode.commands.registerCommand('rewind.startRecording', () => {
+            recorder.startRecording();
+        }),
+
+        vscode.commands.registerCommand('rewind.stopRecording', () => {
+            recorder.stopRecording();
+        }),
+
+        vscode.commands.registerCommand('rewind.showGraph', () => {
+            const panel = vscode.window.createWebviewPanel(
+                'rewindGraph',
+                'Rewind – Code Graph',
+                vscode.ViewColumn.One,
+                { enableScripts: true }
+            );
+
+            panel.webview.html = getWebviewContent();
+
+            const workspace = vscode.workspace.workspaceFolders?.[0];
+            if (!workspace) {
+                vscode.window.showErrorMessage(
+                    'Open a folder in the Extension Development Host first'
+                );
+                return;
+            }
+
+            const files = scanFiles(workspace.uri.fsPath);
+            const graphData = buildGraph(files, workspace.uri.fsPath);
+
+            panel.webview.onDidReceiveMessage(message => {
+                if (message.type === 'ready') {
+                    panel.webview.postMessage(graphData);
+                }
+            });
+        })
+    );
+}
+
 function registerGlobalListeners(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         // 1. Text Document Changes (Consolidated for non-paste features)
@@ -449,11 +502,17 @@ function registerGlobalListeners(context: vscode.ExtensionContext) {
             if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document === e.document) {
                 updatePasteDecorations(vscode.window.activeTextEditor, pasteManager);
             }
+
+            // Audio Sync
+            recorder.trackChange(e);
         }),
 
         // 2. Selection Changes
         vscode.window.onDidChangeTextEditorSelection(e => {
             cognitiveLoadManager.onSelectionChange(e);
+            
+            // Audio Sync: Triggered when user clicks/highlights code during recording
+            recorder.trackSelection(e);
         }),
 
         // 3. Active Editor Changes
@@ -464,13 +523,19 @@ function registerGlobalListeners(context: vscode.ExtensionContext) {
                 syncGhostBlocksCache(editor.document);
                 updatePasteDecorations(editor, pasteManager);
                 updateIntentDecorations(editor, intentManager);
+                recorder.highlightRecordedLines();
                 if (isHeatmapActive) {
                     updateHeatmapDecorations(editor, cognitiveLoadManager);
                 }
             }
         }),
 
-        // 4. Document Save
+        // 4. Document Open
+        vscode.workspace.onDidOpenTextDocument(() => {
+            recorder.highlightRecordedLines();
+        }),
+
+        // 5. Document Save
         vscode.workspace.onDidSaveTextDocument(async (document) => {
             const supported = ['typescript', 'javascript', 'typescriptreact', 'javascriptreact'];
             if (document.uri.scheme === 'file' && supported.includes(document.languageId)) {

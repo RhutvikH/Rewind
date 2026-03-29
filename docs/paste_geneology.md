@@ -9,9 +9,10 @@ Paste Genealogy is a core feature of the Rewind extension that helps users track
    - Upon detecting a paste, the user is prompted to optionally provide a source for the snippet (e.g., "StackOverflow", "GitHub", "Internal Wiki").
 
 2. **Drift Calculation**
-   - As the pasted code is modified, the extension tracks its evolution.
-   - It calculates a "Drift" percentage using the Levenshtein distance between the original pasted snippet and the current state of the block.
-   - If the text block is expanded or shifted by new lines, the extension automatically adjusts its tracking coordinates.
+   - As the pasted code is modified, the extension tracks its evolution in real-time.
+   - It calculates a **Drift** percentage (0.0 to 1.0) using the Levenshtein distance between the original pasted snippet and the current state of the block.
+   - This metric helps reviewers understand how much the original "trusted" source code has been mutated to fit the current project's needs.
+   - If the text block is expanded or shifted by new lines, the extension automatically adjusts its tracking coordinates to maintain alignment.
 
 3. **Visual Indicators and Hovers**
    - Tracked pasted snippets are highlighted with a distinct background decoration.

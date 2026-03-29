@@ -1,65 +1,63 @@
-# Rewind README
+# Rewind
 
-This is the README for your extension "rewind". After writing up a brief description, we recommend including the following sections.
+**Supercharge your development and code reviews with living documentation and real-time insights.**
 
-## Features
+Rewind is a VS Code extension designed to bridge the gap between writing code and explaining it. It provides a suite of tools for tracking cognitive load, managing intent, analyzing change impact, and synchronized audio commentary—all directly inside your editor.
 
-- Paste Geneology and Drift Analysis
+---
 
-## Requirements
+## Key Features
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### [Cognitive Load Heatmap](./docs/cognitiveLoadHeatmap.md)
+Visualize where you struggled the most. Rewind tracks deletions and pauses to paint a real-time heatmap of your "cognitive friction," helping you identify complex blocks that need refactoring or closer review.
 
-## Extension Settings
+### [Instant Intent Markers](./docs/IntentMarkers.md)
+Drop meaningful "intent badges" (e.g., `Refactoring`, `Bug Fix`, `Needs Review`) on any line. Communicate *why* you wrote code a certain way without cluttering your logic with permanent comments.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### [Paste Genealogy & Drift Analysis](./docs/paste_geneology.md)
+Track the provenance of pasted code. Automatically detect snippets from StackOverflow or other sources and monitor how much they "drift" from the original source as you modify them.
 
-For example:
+### [Timeline Forking (Ghost Rewrite)](./docs/timelineForking.md)
+Review code by *demoing* alternatives. Create "Ghost Branches" to rewrite code blocks in a sandbox without altering the original code, allowing for interactive "What If" scenarios during reviews.
 
-This extension contributes the following settings:
+### [Change Impact Alert System](./docs/changeImpactAlertSystem.md)
+Understand the ripple effect of your changes. Automatically analyze workspace-wide impacts when you save a file, highlighting every location that might be affected by your refactor.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+### [Contextual Audio Sync](./docs/contextualAudioSync.md)
+Record your thought process as you code. Rewind syncs your voice to specific lines and selection events, allowing others to click a line and hear exactly what you were thinking at that moment.
 
-## Known Issues
+---
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Installation & Setup
 
-## Release Notes
+1. Search for **Rewind** in the VS Code Marketplace and click **Install**.
+2. **Audio Sync Dependency**: Ensure [SoX](http://sox.sourceforge.net/) is installed on your system for audio recording capabilities.
+3. Open any TypeScript or JavaScript project to begin.
 
-Users appreciate release notes as you update your extension.
+---
 
-## Documentation
-## Paste Geneology and Drift Analysis
+## Configuration
 
-Paste Genealogy is a core feature of the Rewind extension that helps users track the provenance and evolution of code snippets pasted from external sources.
+Customize your Rewind experience in `settings.json`:
 
-### Core Features
+- `rewind.intentMarkerColor`: Customize the highlight color for intent markers.
+- `rewind.customIntentCategories`: Define your own team-specific intent labels.
 
-1. **Automatic Paste Detection**
-   - The extension automatically intercepts code pasted into the editor (for snippets of 10 characters or more).
-   - Upon detecting a paste, the user is prompted to optionally provide a source for the snippet (e.g., "StackOverflow", "GitHub", "Internal Wiki").
+---
 
-2. **Drift Calculation**
-   - As the pasted code is modified, the extension tracks its evolution.
-   - It calculates a "Drift" percentage using the Levenshtein distance between the original pasted snippet and the current state of the block.
-   - If the text block is expanded or shifted by new lines, the extension automatically adjusts its tracking coordinates.
+## Common Commands
 
-3. **Visual Indicators and Hovers**
-   - Tracked pasted snippets are highlighted with a distinct background decoration.
-   - Hovering over a highlighted snippet displays:
-     - The **Source** of the snippet.
-     - The **Drift** (modification percentage).
-     - The **Original text** that was pasted.
+| Command | Description |
+| --- | --- |
+| `Rewind: Toggle Cognitive Load Heatmap` | Show/hide the friction heatmap. |
+| `Rewind: Add Intent Marker` | Drop a badge on the current line. |
+| `Rewind: Start Ghost Rewrite` | Fork a code block into a sandbox. |
+| `Rewind: Analyze Change Impact` | Manually check cross-file impacts. |
+| `Rewind: Start Thought Recording` | Begin an audio-synced session. |
+| `Rewind: Show Code Graph` | Visualize project dependencies. |
 
-4. **Manual Tracking**
-   - Users can manually highlight an existing block of code and run the command `Rewind: Mark Selection as Pasted` (`rewind.markAsPasted`).
-   - This allows bringing existing code under genealogy tracking and manually assigning a source.
+---
 
-### Technical Implementation
+## License
 
-**Enjoy!**
-- **Activation**: Triggers eagerly `onStartupFinished` to ensure all changes are tracked.
-- **Tracking Core**: Handled by `PasteManager`, which listens to `vscode.workspace.onDidChangeTextDocument` events, adjusting coordinates mathematically on content changes.
-- **Drift Logic**: Powered by the `fast-levenshtein` library to calculate efficient string distances continuously.
-- **UI Overlay**: Powered by the `decorations.ts` module which applies `vscode.TextEditorDecorationType` to the active editor dynamically.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -22,8 +22,8 @@ Intent markers act as highly visible "badges" that clearly communicate *why* a p
 5. Watch the marker natively appear on the active line!
 
 ### Managing Markers
-- **`Rewind: Remove Intent Marker`**: Run this command on any highlighted line to delete the marker. If there are multiple markers stacked on that line, a stylish dropdown will let you choose exactly which one to delete!
-- **`Rewind: Delete Custom Intent Category`**: Want to clean up your custom labels? Run this command to delete a custom category. *(Note: Doing this will recursively sweep through your active files and cleanly erase any markers currently using that deleted category!)*
+- **`Rewind: Remove Intent Marker`** (`rewind.removeIntentMarker`): Run this command on any highlighted line to delete the marker. If there are multiple markers stacked on that line, a stylish dropdown will let you choose exactly which one to delete!
+- **`Rewind: Delete Custom Intent Category`** (`rewind.removeCustomIntentCategory`): Want to clean up your custom labels? Run this command to delete a custom category. *(Note: Doing this will recursively sweep through your active files and cleanly erase any markers currently using that deleted category!)*
 
 ## ⚙️ Extension Settings
 

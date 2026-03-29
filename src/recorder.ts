@@ -149,36 +149,55 @@ export class Recorder {
     const workspace = vscode.workspace.workspaceFolders?.[0];
     if (!workspace) return;
 
-    const rewindFolder = path.join(workspace.uri.fsPath, '.rewind');
-    if (!fs.existsSync(rewindFolder)) return;
-
-    const jsonFiles = fs.readdirSync(rewindFolder)
-      .filter(f => f.endsWith('.json'))
-      .sort()
-      .reverse();
-
-    if (jsonFiles.length === 0) return;
-
-    const latestSession = JSON.parse(
-      fs.readFileSync(path.join(rewindFolder, jsonFiles[0]), 'utf-8')
-    );
-
     const file = vscode.workspace.asRelativePath(editor.document.uri);
     const decorations: vscode.DecorationOptions[] = [];
+    const highlightedLines = new Set<number>(); // Prevent duplicate highlights
 
-    latestSession.events.forEach((e: any) => {
+    // 1. Gather historical events from ALL sessions
+    let historicalEvents: any[] = [];
+    const rewindFolder = path.join(workspace.uri.fsPath, '.rewind');
+    
+    if (fs.existsSync(rewindFolder)) {
+      const jsonFiles = fs.readdirSync(rewindFolder)
+        .filter(f => f.endsWith('.json'));
+
+      // LOOP through every saved recording session
+      for (const jsonFile of jsonFiles) {
+        try {
+          const session = JSON.parse(
+            fs.readFileSync(path.join(rewindFolder, jsonFile), 'utf-8')
+          );
+          if (session.events) {
+            historicalEvents.push(...session.events);
+          }
+        } catch (e) {
+          console.error('Failed to parse history', e);
+        }
+      }
+    }
+
+    // 2. Combine history with the live active recording
+    const allEvents = [...historicalEvents, ...this.sessionEvents];
+
+    // 3. Apply the decorations
+    allEvents.forEach((e: any) => {
       if (e.file !== file) return;
       if (e.line === undefined || e.line === null) return;
       if (typeof e.line !== 'number') return;
       if (e.line < 0 || e.line >= editor.document.lineCount) return;
+
+      // Skip if we already highlighted this exact line
+      if (highlightedLines.has(e.line)) return;
+      highlightedLines.add(e.line);
 
       const range = new vscode.Range(
         e.line, 0,
         e.line, editor.document.lineAt(e.line).text.length
       );
 
+      const args = encodeURIComponent(JSON.stringify([e.line]));
       const md = new vscode.MarkdownString(
-        `🎙 **Click to hear explanation**\n\n[Play Recording](command:rewind.playForLine)`
+        `🎙 **Click to hear explanation**\n\n[Play Recording](command:rewind.playForLine?${args})`
       );
       md.isTrusted = true;
 
@@ -229,7 +248,7 @@ export class Recorder {
      PLAY FOR LINE
   ---------------------------------------------------- */
 
-  playForLine() {
+  playForLine(targetLine?: number) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
@@ -237,10 +256,18 @@ export class Recorder {
     if (!workspace) return;
 
     const file = vscode.workspace.asRelativePath(editor.document.uri);
-    const line = editor.selection.active.line;
+    
+    // Use the clicked line if it exists, otherwise fallback to the cursor position
+    const line = targetLine !== undefined ? targetLine : editor.selection.active.line;
 
     const rewindFolder = path.join(workspace.uri.fsPath, '.rewind');
 
+    if (!fs.existsSync(rewindFolder)) {
+      vscode.window.showInformationMessage('No recordings found');
+      return;
+    }
+
+    // Sort descending so we search the NEWEST recordings first
     const jsonFiles = fs.readdirSync(rewindFolder)
       .filter(f => f.endsWith('.json'))
       .sort()
@@ -251,20 +278,35 @@ export class Recorder {
       return;
     }
 
-    const latestSession = JSON.parse(
-      fs.readFileSync(path.join(rewindFolder, jsonFiles[0]), 'utf-8')
-    );
+    let match: any = null;
+    let matchedAudioFile: string = '';
 
-    const match = latestSession.events.find(
-      (e: any) => e.file === file && e.line === line
-    );
+    // Loop through files until we find the audio for this line
+    for (const jsonFile of jsonFiles) {
+      try {
+        const session = JSON.parse(
+          fs.readFileSync(path.join(rewindFolder, jsonFile), 'utf-8')
+        );
+
+        match = session.events?.find(
+          (e: any) => e.file === file && e.line === line
+        );
+
+        if (match) {
+          matchedAudioFile = session.audioFile;
+          break; // Found it! Stop searching older files.
+        }
+      } catch (e) {
+        console.error('Error reading session file', e);
+      }
+    }
 
     if (!match) {
       vscode.window.showInformationMessage('No explanation for this line');
       return;
     }
 
-    this.openAudioPlayer(latestSession.audioFile, match.timestamp);
+    this.openAudioPlayer(matchedAudioFile, match.timestamp);
   }
 
   /* ----------------------------------------------------
@@ -289,6 +331,17 @@ export class Recorder {
     this.isRecording = true;
     this.recordingStartTime = Date.now();
     this.sessionEvents = [];
+
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      this.sessionEvents.push({
+        file: vscode.workspace.asRelativePath(editor.document.uri),
+        line: editor.selection.active.line,
+        timestamp: 0
+      });
+      // TRIGGER UI UPDATE
+      this.highlightRecordedLines();
+    }
 
     const isWindows = process.platform === 'win32';
 
@@ -364,7 +417,7 @@ export class Recorder {
   }
 
   /* ----------------------------------------------------
-     TRACK CHANGES
+     TRACK CHANGES (Typing)
   ---------------------------------------------------- */
 
   trackChange(event: vscode.TextDocumentChangeEvent) {
@@ -385,6 +438,34 @@ export class Recorder {
       line,
       timestamp: Date.now() - this.recordingStartTime
     });
+    
+    // TRIGGER UI UPDATE
+    this.highlightRecordedLines();
+  }
+
+  /* ----------------------------------------------------
+     TRACK SELECTION (Clicking/Cursor Movement)
+  ---------------------------------------------------- */
+
+  trackSelection(event: vscode.TextEditorSelectionChangeEvent) {
+    if (!this.isRecording) return;
+    if (event.selections.length === 0) return;
+
+    const file = vscode.workspace.asRelativePath(event.textEditor.document.uri);
+    const line = event.selections[0].active.line;
+
+    // Prevent spamming the array if they click the exact same line 10 times in a row
+    const lastEvent = this.sessionEvents[this.sessionEvents.length - 1];
+    if (lastEvent && lastEvent.file === file && lastEvent.line === line) return;
+
+    this.sessionEvents.push({
+      file,
+      line,
+      timestamp: Date.now() - this.recordingStartTime
+    });
+
+    // TRIGGER UI UPDATE
+    this.highlightRecordedLines();
   }
 }
 
