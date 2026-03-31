@@ -109,4 +109,38 @@ export class PasteManager {
         // Remove blocks that are fully deleted
         this.pastedBlocks.set(file, blocks.filter(b => b.startLine <= b.endLine && b.currentText.trim() !== ''));
     }
+
+    // Minified format mapping
+    public serialize(): Record<string, any[]> {
+        const obj: Record<string, any[]> = {};
+        for (const [file, events] of this.pastedBlocks.entries()) {
+            obj[file] = events.map(e => ({
+                ts: e.timestamp,
+                sl: e.startLine,
+                el: e.endLine,
+                src: e.source,
+                d: e.drift,
+                orig: e.originalText
+            }));
+        }
+        return obj;
+    }
+
+    public hydrate(data: Record<string, any[]>) {
+        this.pastedBlocks.clear();
+        for (const [file, minifiedEvents] of Object.entries(data)) {
+            const reconstructed = minifiedEvents.map(m => ({
+                type: 'paste_event',
+                timestamp: m.ts,
+                file: file,
+                startLine: m.sl,
+                endLine: m.el,
+                originalText: m.orig,
+                currentText: '', // Will be updated on next document change dynamically
+                source: m.src,
+                drift: m.d
+            } as PasteEvent));
+            this.pastedBlocks.set(file, reconstructed);
+        }
+    }
 }

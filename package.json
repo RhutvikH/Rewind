@@ -1,6 +1,6 @@
 {
   "name": "rewind",
-  "publisher": "rewind",
+  "publisher": "ReWind2027",
   "displayName": "Rewind",
   "description": "Supercharge your code with easier documentation",
   "repository": {"type": "git", "url": "[https://github.com/RhutvikH/Rewind](https://github.com/RhutvikH/Rewind)"},
@@ -19,7 +19,8 @@
   "files": [
     "dist",
     "media",
-    "node_modules"
+    "node_modules",
+    "LICENSE"
   ],
   "contributes": {
     "configuration": {

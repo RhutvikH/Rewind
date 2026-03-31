@@ -51,4 +51,33 @@ export class IntentManager {
         }
         return allMarkers;
     }
+
+    // Minified format: { ts: timestamp, l: line, lbl: label, d: description }
+    public serialize(): Record<string, any[]> {
+        const obj: Record<string, any[]> = {};
+        for (const [file, events] of this.markers.entries()) {
+            obj[file] = events.map(e => ({
+                ts: e.timestamp,
+                l: e.line,
+                lbl: e.intentLabel,
+                d: e.description
+            }));
+        }
+        return obj;
+    }
+
+    public hydrate(data: Record<string, any[]>) {
+        this.markers.clear();
+        for (const [file, minifiedEvents] of Object.entries(data)) {
+            const reconstructed = minifiedEvents.map(m => ({
+                type: 'intent_marker',
+                timestamp: m.ts,
+                file: file,
+                line: m.l,
+                intentLabel: m.lbl,
+                description: m.d
+            } as IntentMarkerEvent));
+            this.markers.set(file, reconstructed);
+        }
+    }
 }

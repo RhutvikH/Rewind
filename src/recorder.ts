@@ -467,6 +467,18 @@ export class Recorder {
     // TRIGGER UI UPDATE
     this.highlightRecordedLines();
   }
+
+  public dispose() {
+    if (this.soxProcess) {
+      try {
+        this.soxProcess.kill('SIGINT');
+      } catch (e) {
+        console.error('Failed to kill sox process on dispose', e);
+      }
+      this.soxProcess = null;
+    }
+    this.isRecording = false;
+  }
 }
 
 /* ----------------------------------------------------

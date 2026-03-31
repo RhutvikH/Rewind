@@ -35,6 +35,7 @@ import {
 import { CognitiveLoadManager } from "./cognitiveLoadManager";
 import { IntentManager } from './intentManager';
 import { PasteManager } from './pasteManager';
+import { PersistenceManager } from './persistenceManager';
 
 // --- Audio Sync Imports ---
 import { Recorder, scanFiles, buildGraph, getWebviewContent } from './recorder';
@@ -43,20 +44,24 @@ import { Recorder, scanFiles, buildGraph, getWebviewContent } from './recorder';
 let pasteManager: PasteManager;
 let intentManager: IntentManager;
 let cognitiveLoadManager: CognitiveLoadManager;
+let persistenceManager: PersistenceManager;
 let recorder: Recorder; // Added Audio Sync Manager
 let isHeatmapActive = false;
 
 /**
  * Extension entry point.
  */
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     console.log('Rewind: Activating all systems...');
 
     // 1. Shared Managers & Decorations
     pasteManager = new PasteManager();
     intentManager = new IntentManager();
     cognitiveLoadManager = new CognitiveLoadManager();
+    persistenceManager = new PersistenceManager();
     recorder = new Recorder(context); // Initialize Audio Recorder
+
+    await persistenceManager.loadState(intentManager, pasteManager, cognitiveLoadManager);
 
     initImpactDecorations();
     initGhostDecorations(context);
@@ -101,6 +106,9 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     if (cognitiveLoadManager) {
         cognitiveLoadManager.dispose();
+    }
+    if (recorder) {
+        recorder.dispose();
     }
 }
 
@@ -179,6 +187,7 @@ function registerGhostRewrite(context: vscode.ExtensionContext) {
 
 function registerCognitiveLoad(context: vscode.ExtensionContext) {
     cognitiveLoadManager.setRepaintCallback(() => {
+        persistenceManager.markDirty();
         if (isHeatmapActive && vscode.window.activeTextEditor) {
             updateHeatmapDecorations(vscode.window.activeTextEditor, cognitiveLoadManager);
         }
@@ -245,6 +254,7 @@ function registerIntentMarkers(context: vscode.ExtensionContext) {
             const file = editor.document.fileName;
 
             intentManager.addMarker(file, line, selectedIntent, description);
+            persistenceManager.markDirty();
             updateIntentDecorations(editor, intentManager);
             vscode.window.showInformationMessage(`Added Intent Marker: ${selectedIntent}`);
         }),
@@ -264,6 +274,7 @@ function registerIntentMarkers(context: vscode.ExtensionContext) {
 
             if (markersOnLine.length === 1) {
                 intentManager.removeMarkersAtLine(file, line, markersOnLine[0].timestamp);
+                persistenceManager.markDirty();
                 updateIntentDecorations(editor, intentManager);
                 vscode.window.showInformationMessage(`Removed Intent Marker: ${markersOnLine[0].intentLabel}`);
                 return;
@@ -289,10 +300,12 @@ function registerIntentMarkers(context: vscode.ExtensionContext) {
 
             if (selected.marker === null) {
                 intentManager.removeMarkersAtLine(file, line);
+                persistenceManager.markDirty();
                 updateIntentDecorations(editor, intentManager);
                 vscode.window.showInformationMessage('Removed all Intent Markers on this line.');
             } else {
                 intentManager.removeMarkersAtLine(file, line, selected.marker.timestamp);
+                persistenceManager.markDirty();
                 updateIntentDecorations(editor, intentManager);
                 vscode.window.showInformationMessage(`Removed Intent Marker: ${selected.marker.intentLabel}`);
             }
@@ -369,6 +382,7 @@ function registerPasteGenealogy(context: vscode.ExtensionContext) {
                 text,
                 source || 'Manual Assignment'
             );
+            persistenceManager.markDirty();
 
             updatePasteDecorations(editor, pasteManager);
             vscode.window.showInformationMessage('Selection marked as pasted.');
@@ -421,6 +435,7 @@ function registerPasteGenealogy(context: vscode.ExtensionContext) {
                         rawBlock,
                         source || 'External Clipboard'
                     );
+                    persistenceManager.markDirty();
 
                     if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document === docRef) {
                         updatePasteDecorations(vscode.window.activeTextEditor, pasteManager);
@@ -483,6 +498,8 @@ function registerGlobalListeners(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         // 1. Text Document Changes (Consolidated for non-paste features)
         vscode.workspace.onDidChangeTextDocument(e => {
+            persistenceManager.markDirty();
+            
             // Cognitive Load
             cognitiveLoadManager.onDocumentChange(e);
             if (isHeatmapActive && vscode.window.activeTextEditor && vscode.window.activeTextEditor.document === e.document) {
@@ -537,10 +554,18 @@ function registerGlobalListeners(context: vscode.ExtensionContext) {
 
         // 5. Document Save
         vscode.workspace.onDidSaveTextDocument(async (document) => {
+            await persistenceManager.saveState(intentManager, pasteManager, cognitiveLoadManager);
+            
             const supported = ['typescript', 'javascript', 'typescriptreact', 'javascriptreact'];
             if (document.uri.scheme === 'file' && supported.includes(document.languageId)) {
                 await analyzeImpact(document);
             }
         })
     );
+
+    // 6. Auto-Save Interval (Every 5 seconds)
+    const autoSaveInterval = setInterval(() => {
+        persistenceManager.autoSave(intentManager, pasteManager, cognitiveLoadManager);
+    }, 5000);
+    context.subscriptions.push({ dispose: () => clearInterval(autoSaveInterval) });
 }

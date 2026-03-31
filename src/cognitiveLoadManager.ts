@@ -157,4 +157,50 @@ export class CognitiveLoadManager {
   public dispose() {
     if (this.dwellTimer) {clearInterval(this.dwellTimer);}
   }
+
+  /**
+   * Efficiently serialize metrics using a sparse object format: { lineIndex: [del, edit, dwell, score] }
+   */
+  public serialize(): Record<string, Record<number, [number, number, number, number]>> {
+      const obj: Record<string, Record<number, [number, number, number, number]>> = {};
+      for (const [file, metricsArr] of this.fileMetrics.entries()) {
+          const sparseData: Record<number, [number, number, number, number]> = {};
+          for (let i = 0; i < metricsArr.length; i++) {
+              const m = metricsArr[i];
+              // Only save if the line has any recorded activity
+              if (m && (m.deletions > 0 || m.editCount > 0 || m.dwellTimeMs > 0 || m.totalScore > 0)) {
+                  sparseData[i] = [m.deletions, m.editCount, m.dwellTimeMs, m.totalScore];
+              }
+          }
+          if (Object.keys(sparseData).length > 0) {
+              obj[file] = sparseData;
+          }
+      }
+      return obj;
+  }
+
+  public hydrate(data: Record<string, Record<number, [number, number, number, number]>>) {
+      this.fileMetrics.clear();
+      for (const [file, sparseData] of Object.entries(data)) {
+          let maxLine = 0;
+          for (const lineStr of Object.keys(sparseData)) {
+              const lineNum = parseInt(lineStr, 10);
+              if (lineNum > maxLine) {maxLine = lineNum;}
+          }
+          
+          // Reconstruct the array with empty metrics for gaps
+          const metricsArr: LineMetrics[] = Array.from({ length: maxLine + 1 }, () => this.createEmptyMetrics());
+          
+          for (const [lineStr, vals] of Object.entries(sparseData)) {
+              const lineNum = parseInt(lineStr, 10);
+              metricsArr[lineNum] = {
+                  deletions: vals[0],
+                  editCount: vals[1],
+                  dwellTimeMs: vals[2],
+                  totalScore: vals[3]
+              };
+          }
+          this.fileMetrics.set(file, metricsArr);
+      }
+  }
 }
